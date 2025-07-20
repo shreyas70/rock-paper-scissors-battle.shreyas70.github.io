@@ -397,6 +397,30 @@ canvas {
     background: linear-gradient(135deg, #d63447 0%, #a93226 100%);
 }
 
+.action-btn.secondary {
+    background: linear-gradient(135deg, var(--accent-secondary) 0%, #e67e22 100%);
+    color: var(--text-primary);
+    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.3);
+    margin-bottom: var(--spacing-md);
+}
+
+.action-btn.secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(243, 156, 18, 0.4);
+}
+
+.action-btn.secondary:active {
+    transform: translateY(0);
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+}
+
+.action-btn.secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.2);
+}
+
 /* Touch feedback for mobile interactions */
 .entity-control:active {
     transform: scale(0.98);

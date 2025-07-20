@@ -37,6 +37,7 @@ const speedValue = document.getElementById("speed-value");
 const countdownTimer = document.getElementById("countdown-timer");
 const timerDisplay = document.getElementById("timer-display");
 const timerLabel = document.getElementById("timer-label");
+const blastButton = document.getElementById("blast-power");
 const updateUI = () => {
     // Update count displays
     rockCount.textContent = rockSlider.value;
@@ -65,6 +66,21 @@ const updateUI = () => {
         countdownTimer.textContent = "Surprise";
         timerDisplay.style.display = "block";
         timerDisplay.classList.remove("space-crunch-active");
+    }
+    // Update blast button cooldown
+    updateBlastCooldown();
+};
+const updateBlastCooldown = () => {
+    const currentTime = Date.now();
+    const remaining = Math.max(0, BUTTON_BLAST_COOLDOWN - (currentTime - lastButtonBlastTime));
+    const seconds = Math.ceil(remaining / 1000);
+    if (remaining > 0) {
+        blastButton.textContent = `💥 Force Blast (${seconds}s)`;
+        blastButton.disabled = true;
+    }
+    else {
+        blastButton.textContent = "💥 Force Blast";
+        blastButton.disabled = false;
     }
 };
 const init = () => {
@@ -126,6 +142,8 @@ const draw = () => {
         ctx.fillStyle = "#ffffff";
         ctx.fillText(ICONS[e.species], e.x, e.y);
     }
+    // Draw blast effects on top
+    drawBlastEffects();
 };
 const getSpeed = () => {
     return +document.getElementById("speed").value;
@@ -230,6 +248,140 @@ rockSlider.addEventListener("input", updateUI);
 paperSlider.addEventListener("input", updateUI);
 scissorsSlider.addEventListener("input", updateUI);
 speedSlider.addEventListener("input", updateUI);
+// Force blast system
+let lastCanvasBlastTime = 0;
+let lastButtonBlastTime = 0;
+const CANVAS_BLAST_COOLDOWN = 1000; // 1 second for canvas clicks
+const BUTTON_BLAST_COOLDOWN = 3000; // 3 seconds for button
+const BLAST_RADIUS = 200;
+const BLAST_STRENGTH = 400;
+let blastEffects = [];
+const handleForceBlast = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Force blast event triggered:", e.type);
+    if (!gameRunning) {
+        console.log("Game not running, blast ignored");
+        return;
+    }
+    const currentTime = Date.now();
+    if (currentTime - lastCanvasBlastTime < CANVAS_BLAST_COOLDOWN) {
+        console.log("Canvas blast on cooldown, ignored");
+        return;
+    }
+    // Get click/touch coordinates
+    let clientX, clientY;
+    if (e instanceof TouchEvent) {
+        if (e.touches.length === 0)
+            return;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+        console.log("Touch event at:", clientX, clientY);
+    }
+    else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+        console.log("Mouse event at:", clientX, clientY);
+    }
+    // Convert screen coordinates to canvas coordinates
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = 600 / rect.width; // Canvas is always 600x600
+    const scaleY = 600 / rect.height;
+    const canvasX = (clientX - rect.left) * scaleX;
+    const canvasY = (clientY - rect.top) * scaleY;
+    console.log(`Canvas bounds:`, rect);
+    console.log(`Scale factors: ${scaleX.toFixed(2)}, ${scaleY.toFixed(2)}`);
+    console.log(`Converted to canvas: ${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}`);
+    // Apply force blast
+    applyForceBlast(canvasX, canvasY);
+    createBlastEffect(canvasX, canvasY);
+    lastCanvasBlastTime = currentTime;
+    console.log(`Canvas force blast applied at: ${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}`);
+};
+const applyForceBlast = (blastX, blastY) => {
+    entities.forEach(entity => {
+        const dx = entity.x - blastX;
+        const dy = entity.y - blastY;
+        const distance = Math.hypot(dx, dy);
+        if (distance < BLAST_RADIUS && distance > 0) {
+            // Force decreases with distance but remains powerful
+            const falloffFactor = Math.max(0.1, 1 - (distance / BLAST_RADIUS)); // 10% minimum force at edge
+            const forceMagnitude = BLAST_STRENGTH * falloffFactor;
+            // Normalize direction and apply force
+            const forceX = (dx / distance) * forceMagnitude;
+            const forceY = (dy / distance) * forceMagnitude;
+            // Apply force for movement
+            entity.vx += forceX * 0.01;
+            entity.vy += forceY * 0.01;
+            // Cap velocity to prevent entities from flying off screen too fast
+            const maxVelocity = 15;
+            const currentSpeed = Math.hypot(entity.vx, entity.vy);
+            if (currentSpeed > maxVelocity) {
+                entity.vx = (entity.vx / currentSpeed) * maxVelocity;
+                entity.vy = (entity.vy / currentSpeed) * maxVelocity;
+            }
+        }
+    });
+};
+const createBlastEffect = (x, y) => {
+    blastEffects.push({
+        x,
+        y,
+        radius: 0,
+        maxRadius: BLAST_RADIUS,
+        opacity: 1,
+        startTime: Date.now()
+    });
+};
+const drawBlastEffects = () => {
+    blastEffects.forEach((blast, index) => {
+        const elapsed = Date.now() - blast.startTime;
+        const progress = Math.min(elapsed / 500, 1); // 500ms animation
+        blast.radius = progress * blast.maxRadius;
+        blast.opacity = 1 - progress;
+        if (progress >= 1) {
+            blastEffects.splice(index, 1);
+            return;
+        }
+        // Draw expanding circle with gradient effect
+        ctx.save();
+        ctx.globalAlpha = blast.opacity;
+        // Outer ring
+        ctx.strokeStyle = "#ffff00"; // Yellow
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(blast.x, blast.y, blast.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        // Inner ring (smaller, more intense)
+        if (blast.radius > 10) {
+            ctx.strokeStyle = "#ff4444"; // Red
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(blast.x, blast.y, blast.radius * 0.7, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+    });
+};
+// Add event listeners for force blast
+console.log("Setting up force blast event listeners on canvas:", canvas);
+canvas.addEventListener("click", handleForceBlast, { passive: false });
+canvas.addEventListener("touchstart", handleForceBlast, { passive: false });
+// Button click for random force blast
+blastButton.addEventListener("click", () => {
+    if (!gameRunning)
+        return;
+    const currentTime = Date.now();
+    if (currentTime - lastButtonBlastTime < BUTTON_BLAST_COOLDOWN)
+        return;
+    // Random blast location
+    const randomX = Math.random() * 600;
+    const randomY = Math.random() * 600;
+    applyForceBlast(randomX, randomY);
+    createBlastEffect(randomX, randomY);
+    lastButtonBlastTime = currentTime;
+    console.log(`Button force blast applied at: ${randomX.toFixed(1)}, ${randomY.toFixed(1)}`);
+});
 // Window resize handler
 window.addEventListener("resize", () => {
     resizeCanvas();
