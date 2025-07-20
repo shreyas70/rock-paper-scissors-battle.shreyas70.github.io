@@ -53,7 +53,6 @@ const countdownTimer = document.getElementById(
 ) as HTMLElement;
 const timerDisplay = document.getElementById("timer-display") as HTMLElement;
 const timerLabel = document.getElementById("timer-label") as HTMLElement;
-const blastButton = document.getElementById("blast-power") as HTMLButtonElement;
 
 // Game state UI elements
 const gameInstruction = document.getElementById("game-instruction") as HTMLElement;
@@ -89,24 +88,9 @@ const updateUI = () => {
     timerDisplay.style.display = "block";
     timerDisplay.classList.remove("space-crunch-active");
   }
-  
-  // Update blast button cooldown
-  updateBlastCooldown();
 };
 
-const updateBlastCooldown = () => {
-  const currentTime = Date.now();
-  const remaining = Math.max(0, BUTTON_BLAST_COOLDOWN - (currentTime - lastButtonBlastTime));
-  const seconds = Math.ceil(remaining / 1000);
-  
-  if (remaining > 0) {
-    blastButton.textContent = `💥 Force Blast (${seconds}s)`;
-    blastButton.disabled = true;
-  } else {
-    blastButton.textContent = "💥 Force Blast";
-    blastButton.disabled = false;
-  }
-};
+
 
 const handleEntitySelection = (selectedEntity: Species) => {
   userSelectedEntity = selectedEntity;
@@ -403,9 +387,7 @@ speedSlider.addEventListener("input", updateUI);
 
 // Force blast system
 let lastCanvasBlastTime = 0;
-let lastButtonBlastTime = 0;
 const CANVAS_BLAST_COOLDOWN = 1000; // 1 second for canvas clicks
-const BUTTON_BLAST_COOLDOWN = 3000; // 3 seconds for button
 const BLAST_RADIUS = 200;
 const BLAST_STRENGTH = 400;
 
@@ -554,23 +536,7 @@ console.log("Setting up force blast event listeners on canvas:", canvas);
 canvas.addEventListener("click", handleForceBlast, { passive: false });
 canvas.addEventListener("touchstart", handleForceBlast, { passive: false });
 
-// Button click for random force blast
-blastButton.addEventListener("click", () => {
-  if (!gameRunning) return;
-  
-  const currentTime = Date.now();
-  if (currentTime - lastButtonBlastTime < BUTTON_BLAST_COOLDOWN) return;
-  
-  // Random blast location
-  const randomX = Math.random() * 600;
-  const randomY = Math.random() * 600;
-  
-  applyForceBlast(randomX, randomY);
-  createBlastEffect(randomX, randomY);
-  lastButtonBlastTime = currentTime;
-  
-  console.log(`Button force blast applied at: ${randomX.toFixed(1)}, ${randomY.toFixed(1)}`);
-});
+
 
 // Window resize handler
 window.addEventListener("resize", () => {
