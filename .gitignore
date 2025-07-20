@@ -2,8 +2,3 @@ node_modules/
 .claude/
 .DS_Store
 *.log
-
-# IDE and cache files
-.idea/
-.npm-cache/
-.npmrc
