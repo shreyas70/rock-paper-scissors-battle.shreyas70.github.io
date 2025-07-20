@@ -41,7 +41,7 @@ let animationId: ReturnType<typeof setTimeout> | null = null;
 // Space crunch mode variables
 let gameStartTime = 0;
 let suddenDeathActive = false;
-const SUDDEN_DEATH_TIME = 10000; // 90 seconds in milliseconds
+const SUDDEN_DEATH_TIME = 45000; // 45 seconds in milliseconds
 let playAreaBounds = { left: 0, top: 0, right: 0, bottom: 0 };
 
 // UI elements
@@ -74,7 +74,7 @@ const updateUI = () => {
     const seconds = Math.ceil(remaining / 1000);
 
     if (remaining > 0) {
-      timerLabel.textContent = "Surprise timer";
+      timerLabel.textContent = "Time before Space Crunch";
       countdownTimer.textContent = `${seconds}s`;
       timerDisplay.style.display = "block";
       timerDisplay.classList.remove("space-crunch-active");
@@ -84,8 +84,8 @@ const updateUI = () => {
       timerDisplay.classList.add("space-crunch-active");
     }
   } else {
-    timerLabel.textContent = "Surprise timer";
-    countdownTimer.textContent = "90s";
+    timerLabel.textContent = "Time before Space Crunch";
+    countdownTimer.textContent = "45s";
     timerDisplay.style.display = "block";
     timerDisplay.classList.remove("space-crunch-active");
   }
@@ -216,7 +216,7 @@ const loop = () => {
   // Shrink play area during space crunch
   if (suddenDeathActive) {
     const shrinkTime = elapsed - SUDDEN_DEATH_TIME;
-    const shrinkRate = 5; // pixels per second from each side
+    const shrinkRate = 10; // pixels per second from each side
     const shrinkAmount = (shrinkTime * shrinkRate) / 1000;
 
     playAreaBounds = {
@@ -261,16 +261,19 @@ const loop = () => {
   const alive = counts.filter((c) => c > 0).length;
   const totalActiveEntities = activeEntities.length;
 
-  // Failsafe: Force end game if space crunch area is too small or only few entities left
+  // Failsafe: Force end game if space crunch area is too small or time limit exceeded
   const playAreaSize =
     (playAreaBounds.right - playAreaBounds.left) *
     (playAreaBounds.bottom - playAreaBounds.top);
   const shouldForceEnd =
-    (suddenDeathActive && playAreaSize < 5000) || // Very small area
-    totalActiveEntities <= 3 || // Very few active entities
-    (suddenDeathActive && elapsed > SUDDEN_DEATH_TIME + 30000); // 30s after space crunch
+    (suddenDeathActive && playAreaSize < 1000) || // Very small area (reduced threshold)
+    (suddenDeathActive && elapsed > SUDDEN_DEATH_TIME + 45000); // 45s after space crunch
 
-  if (alive > 1 && !shouldForceEnd) {
+  // Only end game when exactly one species has active entities (two species have 0 count)
+  const speciesWithZeroCounts = counts.filter(c => c === 0).length;
+  const hasProperWinner = speciesWithZeroCounts === 2 && alive === 1;
+
+  if (!hasProperWinner && !shouldForceEnd) {
     const speed = getSpeed();
     const delay = Math.max(1, Math.round(16 / speed)); // Base 16ms (60fps), adjusted by speed
     animationId = setTimeout(loop, delay);
