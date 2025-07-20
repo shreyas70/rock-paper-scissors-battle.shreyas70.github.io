@@ -30,7 +30,21 @@
 
             <main class="game-main">
                 <div class="canvas-container">
-                    <h2 class="predict-winner-title">Predict Winner</h2>
+                    <h2 class="predict-winner-title" id="game-instruction">Pick Rock/Paper/Scissors</h2>
+                    <div class="entity-selection" id="entity-selection">
+                        <button class="entity-choice" data-entity="0">
+                            <span class="choice-icon">🪨</span>
+                            <span class="choice-name">Rock</span>
+                        </button>
+                        <button class="entity-choice" data-entity="1">
+                            <span class="choice-icon">📄</span>
+                            <span class="choice-name">Paper</span>
+                        </button>
+                        <button class="entity-choice" data-entity="2">
+                            <span class="choice-icon">✂️</span>
+                            <span class="choice-name">Scissors</span>
+                        </button>
+                    </div>
                     <canvas id="canvas"></canvas>
                 </div>
 

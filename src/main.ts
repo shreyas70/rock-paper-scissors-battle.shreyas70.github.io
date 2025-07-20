@@ -27,6 +27,11 @@ let entities: ReturnType<typeof createEntity>[] = [];
 let gameRunning = false;
 let animationId: ReturnType<typeof setTimeout> | null = null;
 
+// Game state management
+type GameState = 'entity-selection' | 'playing' | 'finished';
+let gameState: GameState = 'entity-selection';
+let userSelectedEntity: Species | null = null;
+
 // Space crunch mode variables
 let gameStartTime = 0;
 let suddenDeathActive = false;
@@ -49,6 +54,11 @@ const countdownTimer = document.getElementById(
 const timerDisplay = document.getElementById("timer-display") as HTMLElement;
 const timerLabel = document.getElementById("timer-label") as HTMLElement;
 const blastButton = document.getElementById("blast-power") as HTMLButtonElement;
+
+// Game state UI elements
+const gameInstruction = document.getElementById("game-instruction") as HTMLElement;
+const entitySelection = document.getElementById("entity-selection") as HTMLElement;
+const entityChoices = document.querySelectorAll(".entity-choice") as NodeListOf<HTMLButtonElement>;
 
 const updateUI = () => {
   // Update count displays
@@ -98,11 +108,34 @@ const updateBlastCooldown = () => {
   }
 };
 
+const handleEntitySelection = (selectedEntity: Species) => {
+  userSelectedEntity = selectedEntity;
+  gameState = 'playing';
+  
+  // Update UI
+  entityChoices.forEach((choice, index) => {
+    choice.classList.toggle('selected', index === selectedEntity);
+  });
+  
+  // Hide selection and update instruction
+  entitySelection.classList.add('hidden');
+  gameInstruction.textContent = "Tap screen to create ripples - use strategically to secure your win!";
+  
+  // Start the game
+  init();
+  startGame();
+};
+
 const init = () => {
   entities = [];
   gameStartTime = Date.now();
   suddenDeathActive = false;
   playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
+  
+  // Only initialize entities if we're in playing state
+  if (gameState !== 'playing') {
+    return;
+  }
 
   // Mobile performance optimization - reduce entity counts only on mobile
   const isMobile = window.innerWidth <= 768;
@@ -289,6 +322,7 @@ const loop = () => {
     animationId = setTimeout(loop, delay);
   } else {
     gameRunning = false;
+    gameState = 'finished';
 
     // Determine winner
     let winner = counts.findIndex((c) => c > 0);
@@ -297,23 +331,29 @@ const loop = () => {
       winner = counts.findIndex((c) => c === maxCount);
     }
 
+    // Check if user won
+    const userWon = userSelectedEntity === winner;
+
     // Enhanced winner display
     ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = "#e94560";
+    ctx.fillStyle = userWon ? "#2ecc71" : "#e94560";
     ctx.font = "bold 48px Orbitron, monospace";
     ctx.textAlign = "center";
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
 
-    const winnerText =
-      ["🪨 Rock", "📄 Paper", "✂️ Scissors"][winner] + " Wins!";
-    ctx.strokeText(winnerText, width / 2, height / 2 - 20);
-    ctx.fillText(winnerText, width / 2, height / 2 - 20);
+    const resultText = userWon ? "You Win!" : "You Lose!";
+    ctx.strokeText(resultText, width / 2, height / 2 - 40);
+    ctx.fillText(resultText, width / 2, height / 2 - 40);
 
+    // Show which entity won
     ctx.fillStyle = "#ffffff";
     ctx.font = "24px Inter, sans-serif";
+    const winnerText = ["🪨 Rock", "📄 Paper", "✂️ Scissors"][winner] + " Wins!";
+    ctx.fillText(winnerText, width / 2, height / 2);
+    
     ctx.fillText("Click Restart to play again", width / 2, height / 2 + 40);
   }
 };
@@ -328,8 +368,31 @@ const startGame = () => {
 
 // Event listeners
 document.getElementById("restart")!.addEventListener("click", () => {
-  init();
-  startGame();
+  // Reset to entity selection state
+  gameState = 'entity-selection';
+  userSelectedEntity = null;
+  gameRunning = false;
+  
+  if (animationId) {
+    clearTimeout(animationId);
+    animationId = null;
+  }
+  
+  // Reset UI
+  entitySelection.classList.remove('hidden');
+  gameInstruction.textContent = "Pick Rock/Paper/Scissors";
+  entityChoices.forEach(choice => choice.classList.remove('selected'));
+  
+  // Clear canvas
+  ctx.clearRect(0, 0, width, height);
+  entities = [];
+});
+
+// Entity selection event listeners
+entityChoices.forEach((choice, index) => {
+  choice.addEventListener("click", () => {
+    handleEntitySelection(index as Species);
+  });
 });
 
 // Slider event listeners for real-time UI updates
@@ -517,8 +580,6 @@ window.addEventListener("resize", () => {
   }
 });
 
-// Initialize UI and start game
+// Initialize UI but don't start game - wait for entity selection
 resizeCanvas(); // Initial canvas size
 updateUI();
-init();
-startGame();
