@@ -10,6 +10,12 @@ let entities: ReturnType<typeof createEntity>[] = [];
 let gameRunning = false;
 let animationId: ReturnType<typeof setTimeout> | null = null;
 
+// Space crunch mode variables
+let gameStartTime = 0;
+let suddenDeathActive = false;
+const SUDDEN_DEATH_TIME = 90000; // 90 seconds in milliseconds
+let playAreaBounds = { left: 0, top: 0, right: 800, bottom: 600 };
+
 // UI elements
 const rockSlider = document.getElementById("rock") as HTMLInputElement;
 const paperSlider = document.getElementById("paper") as HTMLInputElement;
@@ -21,6 +27,8 @@ const paperCount = document.getElementById("paper-count") as HTMLElement;
 const scissorsCount = document.getElementById("scissors-count") as HTMLElement;
 const speedValue = document.getElementById("speed-value") as HTMLElement;
 const entityCountDisplay = document.getElementById("entity-count") as HTMLElement;
+const countdownTimer = document.getElementById("countdown-timer") as HTMLElement;
+const timerDisplay = document.getElementById("timer-display") as HTMLElement;
 
 const updateUI = () => {
   // Update count displays
@@ -31,10 +39,33 @@ const updateUI = () => {
   
   // Update entity count
   entityCountDisplay.textContent = entities.length.toString();
+  
+  // Update countdown timer
+  if (gameRunning) {
+    const elapsed = Date.now() - gameStartTime;
+    const remaining = Math.max(0, SUDDEN_DEATH_TIME - elapsed);
+    const seconds = Math.ceil(remaining / 1000);
+    
+    if (remaining > 0) {
+      countdownTimer.textContent = `${seconds}s`;
+      timerDisplay.style.display = 'block';
+    } else {
+      countdownTimer.textContent = "SPACE CRUNCH!";
+      timerDisplay.classList.add('space-crunch-active');
+    }
+  } else {
+    countdownTimer.textContent = "90s";
+    timerDisplay.style.display = 'block';
+    timerDisplay.classList.remove('space-crunch-active');
+  }
 };
 
 const init = () => {
   entities = [];
+  gameStartTime = Date.now();
+  suddenDeathActive = false;
+  playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
+  
   const rock = +rockSlider.value;
   const paper = +paperSlider.value;
   const scissors = +scissorsSlider.value;
@@ -77,10 +108,30 @@ const ICONS = ["🪨", "📄", "✂️"]; // rock, paper, scissors
 
 const draw = () => {
   ctx.clearRect(0, 0, width, height);
+  
+  // Draw shrinking play area during space crunch
+  if (suddenDeathActive) {
+    // Draw danger zone (outside play area)
+    ctx.fillStyle = "rgba(233, 69, 96, 0.3)";
+    ctx.fillRect(0, 0, width, playAreaBounds.top);
+    ctx.fillRect(0, playAreaBounds.bottom, width, height - playAreaBounds.bottom);
+    ctx.fillRect(0, playAreaBounds.top, playAreaBounds.left, playAreaBounds.bottom - playAreaBounds.top);
+    ctx.fillRect(playAreaBounds.right, playAreaBounds.top, width - playAreaBounds.right, playAreaBounds.bottom - playAreaBounds.top);
+    
+    // Draw play area border
+    ctx.strokeStyle = "#e94560";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(playAreaBounds.left, playAreaBounds.top, 
+                   playAreaBounds.right - playAreaBounds.left, 
+                   playAreaBounds.bottom - playAreaBounds.top);
+  }
+  
+  // Draw entities
   for (const e of entities) {
     ctx.font = "16px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
     ctx.fillText(ICONS[e.species], e.x, e.y);
   }
 };
@@ -92,7 +143,27 @@ const getSpeed = (): number => {
 const loop = () => {
   if (!gameRunning) return;
   
-  step(entities, width, height);
+  // Check for space crunch mode
+  const elapsed = Date.now() - gameStartTime;
+  if (elapsed >= SUDDEN_DEATH_TIME && !suddenDeathActive) {
+    suddenDeathActive = true;
+  }
+  
+  // Shrink play area during space crunch
+  if (suddenDeathActive) {
+    const shrinkTime = elapsed - SUDDEN_DEATH_TIME;
+    const shrinkRate = 5; // pixels per second from each side
+    const shrinkAmount = shrinkTime * shrinkRate / 1000;
+    
+    playAreaBounds = {
+      left: Math.min(width * 0.4, shrinkAmount),
+      top: Math.min(height * 0.4, shrinkAmount),
+      right: Math.max(width * 0.6, width - shrinkAmount),
+      bottom: Math.max(height * 0.6, height - shrinkAmount)
+    };
+  }
+  
+  step(entities, width, height, playAreaBounds);
   draw();
   updateUI();
 

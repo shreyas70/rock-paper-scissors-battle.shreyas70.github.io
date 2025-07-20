@@ -23,7 +23,11 @@ export const step = (
   entities: Entity[],
   width: number,
   height: number,
+  playAreaBounds?: { left: number; top: number; right: number; bottom: number }
 ): Entity[] => {
+  // Use provided bounds or default to full canvas
+  const bounds = playAreaBounds || { left: 0, top: 0, right: width, bottom: height };
+  
   // apply edge velocity boost to prevent corner sticking
   for (const e of entities) {
     applyEdgeVelocityBoost(e, width, height);
@@ -34,14 +38,14 @@ export const step = (
     e.x += e.vx;
     e.y += e.vy;
 
-    // bounce off walls
-    if (e.x - e.radius < 0 || e.x + e.radius > width) {
+    // bounce off walls (using shrinking bounds in sudden death)
+    if (e.x - e.radius < bounds.left || e.x + e.radius > bounds.right) {
       e.vx *= WALL_DAMPING;
-      e.x = Math.max(e.radius, Math.min(width - e.radius, e.x));
+      e.x = Math.max(bounds.left + e.radius, Math.min(bounds.right - e.radius, e.x));
     }
-    if (e.y - e.radius < 0 || e.y + e.radius > height) {
+    if (e.y - e.radius < bounds.top || e.y + e.radius > bounds.bottom) {
       e.vy *= WALL_DAMPING;
-      e.y = Math.max(e.radius, Math.min(height - e.radius, e.y));
+      e.y = Math.max(bounds.top + e.radius, Math.min(bounds.bottom - e.radius, e.y));
     }
   }
 
