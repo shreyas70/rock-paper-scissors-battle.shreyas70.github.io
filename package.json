@@ -1,0 +1,14 @@
+{
+  "name": "rock-paper-scissors-battle",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc && live-server --port=3000 --open=index.html",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rock Paper Scissors Battle</title>
+    <link rel="stylesheet" href="src/style.css" />
+  </head>
+  <body>
+    <h1>Rock Paper Scissors – Last One Standing</h1>
+    <canvas id="canvas" width="600" height="600"></canvas>
+    <div id="controls">
+      <label>Rock:  <input id="rock"  type="range" min="0" max="200" value="50" /></label>
+      <label>Paper: <input id="paper" type="range" min="0" max="200" value="50" /></label>
+      <label>Scissors: <input id="scissors" type="range" min="0" max="200" value="50" /></label>
+      <label>Speed: <input id="speed" type="range" min="0.1" max="10" step="0.1" value="1" /></label>
+      <button id="restart">Restart</button>
+    </div>
+    <script type="module" src="dist/main.js"></script>
+  </body>
+</html>
