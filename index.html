@@ -2,19 +2,103 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Rock Paper Scissors Battle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Paper Scissors Battle Arena</title>
     <link rel="stylesheet" href="src/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
   <body>
-    <h1>Rock Paper Scissors – Last One Standing</h1>
-    <canvas id="canvas" width="600" height="600"></canvas>
-    <div id="controls">
-      <label>Rock:  <input id="rock"  type="range" min="0" max="200" value="50" /></label>
-      <label>Paper: <input id="paper" type="range" min="0" max="200" value="50" /></label>
-      <label>Scissors: <input id="scissors" type="range" min="0" max="200" value="50" /></label>
-      <label>Speed: <input id="speed" type="range" min="0.1" max="10" step="0.1" value="1" /></label>
-      <button id="restart">Restart</button>
+    <div class="game-container">
+      <header class="game-header">
+        <h1 class="game-title">
+          <span class="title-icon">⚔️</span>
+          Rock Paper Scissors
+          <span class="title-subtitle">Battle Arena</span>
+        </h1>
+        <div class="battle-stats">
+          <div class="stat-item">
+            <span class="stat-label">Active Entities</span>
+            <span class="stat-value" id="entity-count">0</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="game-main">
+        <div class="canvas-container">
+          <canvas id="canvas" width="800" height="600"></canvas>
+          <div class="canvas-overlay">
+            <div class="legend">
+              <div class="legend-item rock">
+                <div class="legend-icon">🪨</div>
+                <span>Rock</span>
+              </div>
+              <div class="legend-item paper">
+                <div class="legend-icon">📄</div>
+                <span>Paper</span>
+              </div>
+              <div class="legend-item scissors">
+                <div class="legend-icon">✂️</div>
+                <span>Scissors</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="control-panel">
+          <div class="panel-section spawn-controls">
+            <h3 class="section-title">Spawn Entities</h3>
+            
+            <div class="entity-control">
+              <div class="entity-header">
+                <span class="entity-icon">🪨</span>
+                <span class="entity-name">Rock</span>
+                <span class="entity-count" id="rock-count">50</span>
+              </div>
+              <input id="rock" type="range" min="0" max="200" value="50" class="entity-slider" />
+            </div>
+
+            <div class="entity-control">
+              <div class="entity-header">
+                <span class="entity-icon">📄</span>
+                <span class="entity-name">Paper</span>
+                <span class="entity-count" id="paper-count">50</span>
+              </div>
+              <input id="paper" type="range" min="0" max="200" value="50" class="entity-slider" />
+            </div>
+
+            <div class="entity-control">
+              <div class="entity-header">
+                <span class="entity-icon">✂️</span>
+                <span class="entity-name">Scissors</span>
+                <span class="entity-count" id="scissors-count">50</span>
+              </div>
+              <input id="scissors" type="range" min="0" max="200" value="50" class="entity-slider" />
+            </div>
+          </div>
+
+          <div class="panel-section game-settings">
+            <h3 class="section-title">Game Settings</h3>
+            
+            <div class="setting-control">
+              <div class="setting-header">
+                <span class="setting-icon">⚡</span>
+                <span class="setting-name">Speed</span>
+                <span class="setting-value" id="speed-value">1.0x</span>
+              </div>
+              <input id="speed" type="range" min="0.1" max="10" step="0.1" value="1" class="setting-slider" />
+            </div>
+          </div>
+
+          <div class="panel-section game-actions">
+            <button id="restart" class="action-btn primary">
+              <span class="btn-icon">🔄</span>
+              Restart Battle
+            </button>
+          </div>
+        </aside>
+      </main>
     </div>
+    
     <script type="module" src="dist/main.js"></script>
   </body>
 </html>

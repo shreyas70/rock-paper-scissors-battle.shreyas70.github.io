@@ -7,12 +7,30 @@ const height = canvas.height;
 let entities = [];
 let gameRunning = false;
 let animationId = null;
+// UI elements
+const rockSlider = document.getElementById("rock");
+const paperSlider = document.getElementById("paper");
+const scissorsSlider = document.getElementById("scissors");
+const speedSlider = document.getElementById("speed");
+const rockCount = document.getElementById("rock-count");
+const paperCount = document.getElementById("paper-count");
+const scissorsCount = document.getElementById("scissors-count");
+const speedValue = document.getElementById("speed-value");
+const entityCountDisplay = document.getElementById("entity-count");
+const updateUI = () => {
+    // Update count displays
+    rockCount.textContent = rockSlider.value;
+    paperCount.textContent = paperSlider.value;
+    scissorsCount.textContent = scissorsSlider.value;
+    speedValue.textContent = `${parseFloat(speedSlider.value).toFixed(1)}x`;
+    // Update entity count
+    entityCountDisplay.textContent = entities.length.toString();
+};
 const init = () => {
     entities = [];
-    const rock = +document.getElementById("rock").value;
-    const paper = +document.getElementById("paper").value;
-    const scissors = +document.getElementById("scissors")
-        .value;
+    const rock = +rockSlider.value;
+    const paper = +paperSlider.value;
+    const scissors = +scissorsSlider.value;
     // Define three distinct spawn zones
     const zoneSize = 80;
     const zones = [
@@ -45,6 +63,7 @@ const loop = () => {
         return;
     step(entities, width, height);
     draw();
+    updateUI();
     // count species
     const counts = new Array(3).fill(0);
     for (const e of entities)
@@ -58,10 +77,20 @@ const loop = () => {
     else {
         gameRunning = false;
         const winner = counts.findIndex(c => c > 0);
-        ctx.fillStyle = "#fff";
-        ctx.font = "32px monospace";
+        // Enhanced winner display
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#e94560";
+        ctx.font = "bold 48px Orbitron, monospace";
         ctx.textAlign = "center";
-        ctx.fillText(["Rock", "Paper", "Scissors"][winner] + " wins!", width / 2, height / 2);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        const winnerText = ["🪨 Rock", "📄 Paper", "✂️ Scissors"][winner] + " Wins!";
+        ctx.strokeText(winnerText, width / 2, height / 2 - 20);
+        ctx.fillText(winnerText, width / 2, height / 2 - 20);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "24px Inter, sans-serif";
+        ctx.fillText("Click Restart to play again", width / 2, height / 2 + 40);
     }
 };
 const startGame = () => {
@@ -71,13 +100,17 @@ const startGame = () => {
     gameRunning = true;
     loop();
 };
+// Event listeners
 document.getElementById("restart").addEventListener("click", () => {
     init();
     startGame();
 });
-// Speed control - no need to restart game, just affects next loop iteration
-document.getElementById("speed").addEventListener("input", () => {
-    // Speed changes take effect automatically on next loop iteration
-});
+// Slider event listeners for real-time UI updates
+rockSlider.addEventListener("input", updateUI);
+paperSlider.addEventListener("input", updateUI);
+scissorsSlider.addEventListener("input", updateUI);
+speedSlider.addEventListener("input", updateUI);
+// Initialize UI and start game
+updateUI();
 init();
 startGame();
