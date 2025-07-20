@@ -148,7 +148,7 @@ const loop = () => {
   // Shrink play area during space crunch
   if (suddenDeathActive) {
     const shrinkTime = elapsed - SUDDEN_DEATH_TIME;
-    const shrinkRate = 5; // pixels per second from each side
+    const shrinkRate = 10; // pixels per second from each side
     const shrinkAmount = (shrinkTime * shrinkRate) / 1000;
     playAreaBounds = {
       left: Math.min(width * 0.4, shrinkAmount),
@@ -164,13 +164,27 @@ const loop = () => {
   const counts = new Array(3).fill(0);
   for (const e of entities) counts[e.species]++;
   const alive = counts.filter((c) => c > 0).length;
-  if (alive > 1) {
+  // Failsafe: Force end game if space crunch area is too small or only few entities left
+  const totalEntities = entities.length;
+  const playAreaSize =
+    (playAreaBounds.right - playAreaBounds.left) *
+    (playAreaBounds.bottom - playAreaBounds.top);
+  const shouldForceEnd =
+    (suddenDeathActive && playAreaSize < 5000) || // Very small area
+    totalEntities <= 3 || // Very few entities
+    (suddenDeathActive && elapsed > SUDDEN_DEATH_TIME + 30000); // 30s after space crunch
+  if (alive > 1 && !shouldForceEnd) {
     const speed = getSpeed();
     const delay = Math.max(1, Math.round(16 / speed)); // Base 16ms (60fps), adjusted by speed
     animationId = setTimeout(loop, delay);
   } else {
     gameRunning = false;
-    const winner = counts.findIndex((c) => c > 0);
+    // Determine winner - if multiple species alive, winner is most numerous
+    let winner = counts.findIndex((c) => c > 0);
+    if (alive > 1 || counts.every((c) => c === 0)) {
+      const maxCount = Math.max(...counts);
+      winner = counts.findIndex((c) => c === maxCount);
+    }
     // Enhanced winner display
     ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     ctx.fillRect(0, 0, width, height);
