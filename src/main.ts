@@ -3,8 +3,36 @@ import { step } from "./engine.js";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
-const width = canvas.width;
-const height = canvas.height;
+
+// Dynamic canvas sizing
+let width: number;
+let height: number;
+
+const resizeCanvas = () => {
+  const isMobile = window.innerWidth <= 768;
+  
+  if (isMobile) {
+    // Mobile: Dynamic sizing for better mobile experience
+    const container = canvas.parentElement!;
+    const containerRect = container.getBoundingClientRect();
+    const maxWidth = Math.min(containerRect.width - 32, window.innerWidth - 64);
+    
+    width = Math.min(maxWidth, 400);
+    height = Math.min(width * 0.75, 300); // 4:3 aspect ratio for mobile
+  } else {
+    // Desktop: Fixed 600x600 like original to prevent squishing
+    width = 600;
+    height = 600;
+  }
+  
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  
+  // Update play area bounds for space crunch
+  playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
+};
 
 let entities: ReturnType<typeof createEntity>[] = [];
 let gameRunning = false;
@@ -14,7 +42,7 @@ let animationId: ReturnType<typeof setTimeout> | null = null;
 let gameStartTime = 0;
 let suddenDeathActive = false;
 const SUDDEN_DEATH_TIME = 90000; // 90 seconds in milliseconds
-let playAreaBounds = { left: 0, top: 0, right: 800, bottom: 600 };
+let playAreaBounds = { left: 0, top: 0, right: 0, bottom: 0 };
 
 // UI elements
 const rockSlider = document.getElementById("rock") as HTMLInputElement;
@@ -26,7 +54,6 @@ const rockCount = document.getElementById("rock-count") as HTMLElement;
 const paperCount = document.getElementById("paper-count") as HTMLElement;
 const scissorsCount = document.getElementById("scissors-count") as HTMLElement;
 const speedValue = document.getElementById("speed-value") as HTMLElement;
-const entityCountDisplay = document.getElementById("entity-count") as HTMLElement;
 const countdownTimer = document.getElementById("countdown-timer") as HTMLElement;
 const timerDisplay = document.getElementById("timer-display") as HTMLElement;
 
@@ -37,8 +64,6 @@ const updateUI = () => {
   scissorsCount.textContent = scissorsSlider.value;
   speedValue.textContent = `${parseFloat(speedSlider.value).toFixed(1)}x`;
   
-  // Update entity count
-  entityCountDisplay.textContent = entities.length.toString();
   
   // Update countdown timer
   if (gameRunning) {
@@ -66,9 +91,24 @@ const init = () => {
   suddenDeathActive = false;
   playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
   
-  const rock = +rockSlider.value;
-  const paper = +paperSlider.value;
-  const scissors = +scissorsSlider.value;
+  // Mobile performance optimization - reduce entity counts only on mobile
+  const isMobile = window.innerWidth <= 768;
+  const maxEntities = isMobile ? 45 : 600; // 45 for mobile, 600 for desktop
+  
+  let rock = +rockSlider.value;
+  let paper = +paperSlider.value;
+  let scissors = +scissorsSlider.value;
+  
+  // Scale down for mobile only
+  if (isMobile) {
+    const total = rock + paper + scissors;
+    if (total > maxEntities) {
+      const scale = maxEntities / total;
+      rock = Math.max(1, Math.floor(rock * scale));
+      paper = Math.max(1, Math.floor(paper * scale));
+      scissors = Math.max(1, Math.floor(scissors * scale));
+    }
+  }
 
   // Define three distinct spawn zones
   const zoneSize = 80;
@@ -165,19 +205,43 @@ const loop = () => {
   
   step(entities, width, height, playAreaBounds);
   draw();
-  updateUI();
+  
+  // Mobile optimization - update UI less frequently
+  const isMobile = window.innerWidth <= 768;
+  const frameCounter = (window as any).frameCounter || 0;
+  (window as any).frameCounter = frameCounter + 1;
+  
+  if (!isMobile || frameCounter % 3 === 0) { // Update UI every 3rd frame on mobile
+    updateUI();
+  }
 
-  // count species
+  // count species - only count entities within active play area
   const counts = new Array(3).fill(0);
-  for (const e of entities) counts[e.species]++;
+  const activeEntities: ReturnType<typeof createEntity>[] = [];
+  
+  for (const e of entities) {
+    // Check if entity is within active play bounds
+    const isInActiveBounds = (
+      e.x >= playAreaBounds.left && 
+      e.x <= playAreaBounds.right && 
+      e.y >= playAreaBounds.top && 
+      e.y <= playAreaBounds.bottom
+    );
+    
+    if (isInActiveBounds) {
+      counts[e.species]++;
+      activeEntities.push(e);
+    }
+  }
+  
   const alive = counts.filter(c => c > 0).length;
+  const totalActiveEntities = activeEntities.length;
   
   // Failsafe: Force end game if space crunch area is too small or only few entities left
-  const totalEntities = entities.length;
   const playAreaSize = (playAreaBounds.right - playAreaBounds.left) * (playAreaBounds.bottom - playAreaBounds.top);
   const shouldForceEnd = (
     (suddenDeathActive && playAreaSize < 5000) || // Very small area
-    totalEntities <= 3 || // Very few entities
+    totalActiveEntities <= 3 || // Very few active entities
     (suddenDeathActive && elapsed > SUDDEN_DEATH_TIME + 30000) // 30s after space crunch
   );
   
@@ -188,7 +252,7 @@ const loop = () => {
   } else {
     gameRunning = false;
     
-    // Determine winner - if multiple species alive, winner is most numerous
+    // Determine winner
     let winner = counts.findIndex(c => c > 0);
     if (alive > 1 || counts.every(c => c === 0)) {
       const maxCount = Math.max(...counts);
@@ -235,7 +299,16 @@ paperSlider.addEventListener("input", updateUI);
 scissorsSlider.addEventListener("input", updateUI);
 speedSlider.addEventListener("input", updateUI);
 
+// Window resize handler
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  if (gameRunning) {
+    draw(); // Redraw immediately on resize
+  }
+});
+
 // Initialize UI and start game
+resizeCanvas(); // Initial canvas size
 updateUI();
 init();
 startGame();
