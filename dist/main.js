@@ -49,20 +49,20 @@ const updateUI = () => {
         const remaining = Math.max(0, SUDDEN_DEATH_TIME - elapsed);
         const seconds = Math.ceil(remaining / 1000);
         if (remaining > 0) {
-            timerLabel.textContent = "Time before Space Crunch";
+            timerLabel.textContent = "Surprise timer";
             countdownTimer.textContent = `${seconds}s`;
             timerDisplay.style.display = "block";
             timerDisplay.classList.remove("space-crunch-active");
         }
         else {
-            timerLabel.textContent = "Space Crunch Active";
+            timerLabel.textContent = "Space Crunch";
             countdownTimer.textContent = "ACTIVE";
             timerDisplay.classList.add("space-crunch-active");
         }
     }
     else {
-        timerLabel.textContent = "Time before Space Crunch";
-        countdownTimer.textContent = "45s";
+        timerLabel.textContent = "Surprise timer";
+        countdownTimer.textContent = "Surprise";
         timerDisplay.style.display = "block";
         timerDisplay.classList.remove("space-crunch-active");
     }
