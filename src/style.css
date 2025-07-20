@@ -153,6 +153,12 @@ canvas {
     box-shadow:
         0 0 50px var(--shadow-primary),
         inset 0 0 50px rgba(0, 0, 0, 0.3);
+    /* Fixed canvas size with responsive scaling */
+    width: 600px;
+    height: 600px;
+    max-width: 100%;
+    /* Maintain aspect ratio when scaling */
+    object-fit: contain;
 }
 
 /* Control panel */
@@ -472,10 +478,7 @@ canvas {
         position: static;
     }
 
-    canvas {
-        max-width: 100%;
-        height: auto;
-    }
+    /* Canvas responsive scaling handled by base canvas styles */
 }
 
 @media (max-width: 768px) {
@@ -498,10 +501,7 @@ canvas {
         padding: var(--spacing-md);
     }
 
-    canvas {
-        width: 100%;
-        max-width: 400px;
-    }
+    /* Canvas responsive scaling handled by base canvas styles */
 
     /* Mobile font scaling */
     .section-title {

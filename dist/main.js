@@ -6,24 +6,14 @@ const ctx = canvas.getContext("2d");
 let width;
 let height;
 const resizeCanvas = () => {
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile) {
-        // Mobile: Dynamic sizing for better mobile experience
-        const container = canvas.parentElement;
-        const containerRect = container.getBoundingClientRect();
-        const maxWidth = Math.min(containerRect.width - 32, window.innerWidth - 64);
-        width = Math.min(maxWidth, 400);
-        height = Math.min(width * 0.75, 300); // 4:3 aspect ratio for mobile
-    }
-    else {
-        // Desktop: Fixed 600x600 like original to prevent squishing
-        width = 600;
-        height = 600;
-    }
+    // Always use fixed 600x600 canvas - let CSS handle responsive scaling
+    width = 600;
+    height = 600;
     canvas.width = width;
     canvas.height = height;
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
+    // Remove inline styles - let CSS handle all sizing
+    canvas.style.width = "";
+    canvas.style.height = "";
     // Update play area bounds for space crunch
     playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
 };
@@ -84,7 +74,7 @@ const init = () => {
     playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
     // Mobile performance optimization - reduce entity counts only on mobile
     const isMobile = window.innerWidth <= 768;
-    const maxEntities = isMobile ? 45 : 600; // 45 for mobile, 600 for desktop
+    const maxEntities = isMobile ? 60 : 600; // Increased mobile limit since canvas is fixed size
     let rock = +rockSlider.value;
     let paper = +paperSlider.value;
     let scissors = +scissorsSlider.value;
