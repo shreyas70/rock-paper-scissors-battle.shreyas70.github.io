@@ -10,13 +10,13 @@ let height: number;
 
 const resizeCanvas = () => {
   const isMobile = window.innerWidth <= 768;
-  
+
   if (isMobile) {
     // Mobile: Dynamic sizing for better mobile experience
     const container = canvas.parentElement!;
     const containerRect = container.getBoundingClientRect();
     const maxWidth = Math.min(containerRect.width - 32, window.innerWidth - 64);
-    
+
     width = Math.min(maxWidth, 400);
     height = Math.min(width * 0.75, 300); // 4:3 aspect ratio for mobile
   } else {
@@ -24,12 +24,12 @@ const resizeCanvas = () => {
     width = 600;
     height = 600;
   }
-  
+
   canvas.width = width;
   canvas.height = height;
-  canvas.style.width = width + 'px';
-  canvas.style.height = height + 'px';
-  
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+
   // Update play area bounds for space crunch
   playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
 };
@@ -41,7 +41,7 @@ let animationId: ReturnType<typeof setTimeout> | null = null;
 // Space crunch mode variables
 let gameStartTime = 0;
 let suddenDeathActive = false;
-const SUDDEN_DEATH_TIME = 90000; // 90 seconds in milliseconds
+const SUDDEN_DEATH_TIME = 10000; // 90 seconds in milliseconds
 let playAreaBounds = { left: 0, top: 0, right: 0, bottom: 0 };
 
 // UI elements
@@ -54,8 +54,11 @@ const rockCount = document.getElementById("rock-count") as HTMLElement;
 const paperCount = document.getElementById("paper-count") as HTMLElement;
 const scissorsCount = document.getElementById("scissors-count") as HTMLElement;
 const speedValue = document.getElementById("speed-value") as HTMLElement;
-const countdownTimer = document.getElementById("countdown-timer") as HTMLElement;
+const countdownTimer = document.getElementById(
+  "countdown-timer",
+) as HTMLElement;
 const timerDisplay = document.getElementById("timer-display") as HTMLElement;
+const timerLabel = document.getElementById("timer-label") as HTMLElement;
 
 const updateUI = () => {
   // Update count displays
@@ -63,25 +66,28 @@ const updateUI = () => {
   paperCount.textContent = paperSlider.value;
   scissorsCount.textContent = scissorsSlider.value;
   speedValue.textContent = `${parseFloat(speedSlider.value).toFixed(1)}x`;
-  
-  
+
   // Update countdown timer
   if (gameRunning) {
     const elapsed = Date.now() - gameStartTime;
     const remaining = Math.max(0, SUDDEN_DEATH_TIME - elapsed);
     const seconds = Math.ceil(remaining / 1000);
-    
+
     if (remaining > 0) {
+      timerLabel.textContent = "Surprise timer";
       countdownTimer.textContent = `${seconds}s`;
-      timerDisplay.style.display = 'block';
+      timerDisplay.style.display = "block";
+      timerDisplay.classList.remove("space-crunch-active");
     } else {
-      countdownTimer.textContent = "SPACE CRUNCH!";
-      timerDisplay.classList.add('space-crunch-active');
+      timerLabel.textContent = "Space Crunch Active";
+      countdownTimer.textContent = "ACTIVE";
+      timerDisplay.classList.add("space-crunch-active");
     }
   } else {
+    timerLabel.textContent = "Surprise timer";
     countdownTimer.textContent = "90s";
-    timerDisplay.style.display = 'block';
-    timerDisplay.classList.remove('space-crunch-active');
+    timerDisplay.style.display = "block";
+    timerDisplay.classList.remove("space-crunch-active");
   }
 };
 
@@ -90,15 +96,15 @@ const init = () => {
   gameStartTime = Date.now();
   suddenDeathActive = false;
   playAreaBounds = { left: 0, top: 0, right: width, bottom: height };
-  
+
   // Mobile performance optimization - reduce entity counts only on mobile
   const isMobile = window.innerWidth <= 768;
   const maxEntities = isMobile ? 45 : 600; // 45 for mobile, 600 for desktop
-  
+
   let rock = +rockSlider.value;
   let paper = +paperSlider.value;
   let scissors = +scissorsSlider.value;
-  
+
   // Scale down for mobile only
   if (isMobile) {
     const total = rock + paper + scissors;
@@ -123,24 +129,24 @@ const init = () => {
       createEntity(
         Species.Rock,
         zones[0].x + (Math.random() - 0.5) * zoneSize,
-        zones[0].y + (Math.random() - 0.5) * zoneSize
-      )
+        zones[0].y + (Math.random() - 0.5) * zoneSize,
+      ),
     );
   for (let i = 0; i < paper; i++)
     entities.push(
       createEntity(
         Species.Paper,
         zones[1].x + (Math.random() - 0.5) * zoneSize,
-        zones[1].y + (Math.random() - 0.5) * zoneSize
-      )
+        zones[1].y + (Math.random() - 0.5) * zoneSize,
+      ),
     );
   for (let i = 0; i < scissors; i++)
     entities.push(
       createEntity(
         Species.Scissors,
         zones[2].x + (Math.random() - 0.5) * zoneSize,
-        zones[2].y + (Math.random() - 0.5) * zoneSize
-      )
+        zones[2].y + (Math.random() - 0.5) * zoneSize,
+      ),
     );
 };
 
@@ -148,24 +154,42 @@ const ICONS = ["🪨", "📄", "✂️"]; // rock, paper, scissors
 
 const draw = () => {
   ctx.clearRect(0, 0, width, height);
-  
+
   // Draw shrinking play area during space crunch
   if (suddenDeathActive) {
     // Draw danger zone (outside play area)
     ctx.fillStyle = "rgba(233, 69, 96, 0.3)";
     ctx.fillRect(0, 0, width, playAreaBounds.top);
-    ctx.fillRect(0, playAreaBounds.bottom, width, height - playAreaBounds.bottom);
-    ctx.fillRect(0, playAreaBounds.top, playAreaBounds.left, playAreaBounds.bottom - playAreaBounds.top);
-    ctx.fillRect(playAreaBounds.right, playAreaBounds.top, width - playAreaBounds.right, playAreaBounds.bottom - playAreaBounds.top);
-    
+    ctx.fillRect(
+      0,
+      playAreaBounds.bottom,
+      width,
+      height - playAreaBounds.bottom,
+    );
+    ctx.fillRect(
+      0,
+      playAreaBounds.top,
+      playAreaBounds.left,
+      playAreaBounds.bottom - playAreaBounds.top,
+    );
+    ctx.fillRect(
+      playAreaBounds.right,
+      playAreaBounds.top,
+      width - playAreaBounds.right,
+      playAreaBounds.bottom - playAreaBounds.top,
+    );
+
     // Draw play area border
     ctx.strokeStyle = "#e94560";
     ctx.lineWidth = 3;
-    ctx.strokeRect(playAreaBounds.left, playAreaBounds.top, 
-                   playAreaBounds.right - playAreaBounds.left, 
-                   playAreaBounds.bottom - playAreaBounds.top);
+    ctx.strokeRect(
+      playAreaBounds.left,
+      playAreaBounds.top,
+      playAreaBounds.right - playAreaBounds.left,
+      playAreaBounds.bottom - playAreaBounds.top,
+    );
   }
-  
+
   // Draw entities
   for (const e of entities) {
     ctx.font = "16px sans-serif";
@@ -182,97 +206,99 @@ const getSpeed = (): number => {
 
 const loop = () => {
   if (!gameRunning) return;
-  
+
   // Check for space crunch mode
   const elapsed = Date.now() - gameStartTime;
   if (elapsed >= SUDDEN_DEATH_TIME && !suddenDeathActive) {
     suddenDeathActive = true;
   }
-  
+
   // Shrink play area during space crunch
   if (suddenDeathActive) {
     const shrinkTime = elapsed - SUDDEN_DEATH_TIME;
     const shrinkRate = 5; // pixels per second from each side
-    const shrinkAmount = shrinkTime * shrinkRate / 1000;
-    
+    const shrinkAmount = (shrinkTime * shrinkRate) / 1000;
+
     playAreaBounds = {
       left: Math.min(width * 0.4, shrinkAmount),
       top: Math.min(height * 0.4, shrinkAmount),
       right: Math.max(width * 0.6, width - shrinkAmount),
-      bottom: Math.max(height * 0.6, height - shrinkAmount)
+      bottom: Math.max(height * 0.6, height - shrinkAmount),
     };
   }
-  
+
   step(entities, width, height, playAreaBounds);
   draw();
-  
+
   // Mobile optimization - update UI less frequently
   const isMobile = window.innerWidth <= 768;
   const frameCounter = (window as any).frameCounter || 0;
   (window as any).frameCounter = frameCounter + 1;
-  
-  if (!isMobile || frameCounter % 3 === 0) { // Update UI every 3rd frame on mobile
+
+  if (!isMobile || frameCounter % 3 === 0) {
+    // Update UI every 3rd frame on mobile
     updateUI();
   }
 
   // count species - only count entities within active play area
   const counts = new Array(3).fill(0);
   const activeEntities: ReturnType<typeof createEntity>[] = [];
-  
+
   for (const e of entities) {
     // Check if entity is within active play bounds
-    const isInActiveBounds = (
-      e.x >= playAreaBounds.left && 
-      e.x <= playAreaBounds.right && 
-      e.y >= playAreaBounds.top && 
-      e.y <= playAreaBounds.bottom
-    );
-    
+    const isInActiveBounds =
+      e.x >= playAreaBounds.left &&
+      e.x <= playAreaBounds.right &&
+      e.y >= playAreaBounds.top &&
+      e.y <= playAreaBounds.bottom;
+
     if (isInActiveBounds) {
       counts[e.species]++;
       activeEntities.push(e);
     }
   }
-  
-  const alive = counts.filter(c => c > 0).length;
+
+  const alive = counts.filter((c) => c > 0).length;
   const totalActiveEntities = activeEntities.length;
-  
+
   // Failsafe: Force end game if space crunch area is too small or only few entities left
-  const playAreaSize = (playAreaBounds.right - playAreaBounds.left) * (playAreaBounds.bottom - playAreaBounds.top);
-  const shouldForceEnd = (
+  const playAreaSize =
+    (playAreaBounds.right - playAreaBounds.left) *
+    (playAreaBounds.bottom - playAreaBounds.top);
+  const shouldForceEnd =
     (suddenDeathActive && playAreaSize < 5000) || // Very small area
     totalActiveEntities <= 3 || // Very few active entities
-    (suddenDeathActive && elapsed > SUDDEN_DEATH_TIME + 30000) // 30s after space crunch
-  );
-  
+    (suddenDeathActive && elapsed > SUDDEN_DEATH_TIME + 30000); // 30s after space crunch
+
   if (alive > 1 && !shouldForceEnd) {
     const speed = getSpeed();
     const delay = Math.max(1, Math.round(16 / speed)); // Base 16ms (60fps), adjusted by speed
     animationId = setTimeout(loop, delay);
   } else {
     gameRunning = false;
-    
+
     // Determine winner
-    let winner = counts.findIndex(c => c > 0);
-    if (alive > 1 || counts.every(c => c === 0)) {
+    let winner = counts.findIndex((c) => c > 0);
+    if (alive > 1 || counts.every((c) => c === 0)) {
       const maxCount = Math.max(...counts);
-      winner = counts.findIndex(c => c === maxCount);
+      winner = counts.findIndex((c) => c === maxCount);
     }
-    
+
     // Enhanced winner display
     ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     ctx.fillRect(0, 0, width, height);
-    
+
     ctx.fillStyle = "#e94560";
     ctx.font = "bold 48px Orbitron, monospace";
     ctx.textAlign = "center";
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
-    
-    const winnerText = ["🪨 Rock", "📄 Paper", "✂️ Scissors"][winner] + " Wins!";
+
+    const winnerText =
+      ["🪨 Rock", "📄 Paper", "✂️ Scissors"][winner] + " Wins!";
     ctx.strokeText(winnerText, width / 2, height / 2 - 20);
     ctx.fillText(winnerText, width / 2, height / 2 - 20);
-    
+
     ctx.fillStyle = "#ffffff";
     ctx.font = "24px Inter, sans-serif";
     ctx.fillText("Click Restart to play again", width / 2, height / 2 + 40);
@@ -300,7 +326,7 @@ scissorsSlider.addEventListener("input", updateUI);
 speedSlider.addEventListener("input", updateUI);
 
 // Window resize handler
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
   resizeCanvas();
   if (gameRunning) {
     draw(); // Redraw immediately on resize
