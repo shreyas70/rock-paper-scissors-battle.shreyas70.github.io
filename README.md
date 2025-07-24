@@ -1,2 +1,2 @@
 Play away! 
-https://shreyas70.github.com/rock-paper-scissors-battle
+https://shreyas70.github.io/rock-paper-scissors-battle
