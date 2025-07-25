@@ -1,5 +1,8 @@
 import { createEntity, Species } from "./entity.js";
 import { step } from "./engine.js";
+import { Joystick } from "./joystick.js";
+import { PerformanceMonitor, getDynamicMaxEntities } from "./performance.js";
+import { ForceBlast } from "./force-blast.js";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -54,11 +57,16 @@ const countdownTimer = document.getElementById(
 const timerDisplay = document.getElementById("timer-display") as HTMLElement;
 const timerLabel = document.getElementById("timer-label") as HTMLElement;
 const blastButton = document.getElementById("blast-power") as HTMLButtonElement;
+const panelToggle = document.getElementById("panel-toggle") as HTMLButtonElement;
+const controlPanel = document.getElementById("control-panel") as HTMLElement;
 
 // Game state UI elements
 const gameInstruction = document.getElementById("game-instruction") as HTMLElement;
 const entitySelection = document.getElementById("entity-selection") as HTMLElement;
 const entityChoices = document.querySelectorAll(".entity-choice") as NodeListOf<HTMLButtonElement>;
+
+const joystick = new Joystick("joystick-container");
+const performanceMonitor = new PerformanceMonitor();
 
 const updateUI = () => {
   // Update count displays
@@ -137,23 +145,18 @@ const init = () => {
     return;
   }
 
-  // Mobile performance optimization - reduce entity counts only on mobile
-  const isMobile = window.innerWidth <= 768;
-  const maxEntities = isMobile ? 60 : 600; // Increased mobile limit since canvas is fixed size
+  const maxEntities = getDynamicMaxEntities();
 
   let rock = +rockSlider.value;
   let paper = +paperSlider.value;
   let scissors = +scissorsSlider.value;
 
-  // Scale down for mobile only
-  if (isMobile) {
-    const total = rock + paper + scissors;
-    if (total > maxEntities) {
-      const scale = maxEntities / total;
-      rock = Math.max(1, Math.floor(rock * scale));
-      paper = Math.max(1, Math.floor(paper * scale));
-      scissors = Math.max(1, Math.floor(scissors * scale));
-    }
+  const total = rock + paper + scissors;
+  if (total > maxEntities) {
+    const scale = maxEntities / total;
+    rock = Math.max(1, Math.floor(rock * scale));
+    paper = Math.max(1, Math.floor(paper * scale));
+    scissors = Math.max(1, Math.floor(scissors * scale));
   }
 
   // Define three distinct spawn zones
@@ -271,7 +274,23 @@ const loop = () => {
   }
 
   step(entities, width, height, playAreaBounds);
+
+  if (joystick.deltaX !== 0 || joystick.deltaY !== 0) {
+    const blastX = width / 2 + joystick.deltaX * (width / 2);
+    const blastY = height / 2 + joystick.deltaY * (height / 2);
+    new ForceBlast(blastX, blastY, entities).apply();
+    createBlastEffect(blastX, blastY);
+  }
+
   draw();
+
+  performanceMonitor.update();
+
+  // Display FPS
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(`FPS: ${performanceMonitor.getFPS()}`, 10, 20);
 
   // Mobile optimization - update UI less frequently
   const isMobile = window.innerWidth <= 768;
@@ -464,44 +483,14 @@ const handleForceBlast = (e: MouseEvent | TouchEvent) => {
   console.log(`Converted to canvas: ${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}`);
   
   // Apply force blast
-  applyForceBlast(canvasX, canvasY);
+  new ForceBlast(canvasX, canvasY, entities).apply();
   createBlastEffect(canvasX, canvasY);
   lastCanvasBlastTime = currentTime;
   
   console.log(`Canvas force blast applied at: ${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}`);
 };
 
-const applyForceBlast = (blastX: number, blastY: number) => {
-  entities.forEach(entity => {
-    const dx = entity.x - blastX;
-    const dy = entity.y - blastY;
-    const distance = Math.hypot(dx, dy);
-    
-    if (distance < BLAST_RADIUS && distance > 0) {
-      // Force decreases with distance but remains powerful
-      const falloffFactor = Math.max(0.1, 1 - (distance / BLAST_RADIUS)); // 10% minimum force at edge
-      const forceMagnitude = BLAST_STRENGTH * falloffFactor;
-      
-      // Normalize direction and apply force
-      const forceX = (dx / distance) * forceMagnitude;
-      const forceY = (dy / distance) * forceMagnitude;
-      
-      // Apply force for movement
-      entity.vx += forceX * 0.01;
-      entity.vy += forceY * 0.01;
-      
-      // Cap velocity to prevent entities from flying off screen too fast
-      const maxVelocity = 15;
-      const currentSpeed = Math.hypot(entity.vx, entity.vy);
-      if (currentSpeed > maxVelocity) {
-        entity.vx = (entity.vx / currentSpeed) * maxVelocity;
-        entity.vy = (entity.vy / currentSpeed) * maxVelocity;
-      }
-    }
-  });
-};
-
-const createBlastEffect = (x: number, y: number) => {
+export const createBlastEffect = (x: number, y: number) => {
   blastEffects.push({
     x,
     y,
@@ -511,6 +500,8 @@ const createBlastEffect = (x: number, y: number) => {
     startTime: Date.now()
   });
 };
+
+export const getBlastEffects = () => blastEffects;
 
 const drawBlastEffects = () => {
   blastEffects.forEach((blast, index) => {
@@ -549,11 +540,6 @@ const drawBlastEffects = () => {
   });
 };
 
-// Add event listeners for force blast
-console.log("Setting up force blast event listeners on canvas:", canvas);
-canvas.addEventListener("click", handleForceBlast, { passive: false });
-canvas.addEventListener("touchstart", handleForceBlast, { passive: false });
-
 // Button click for random force blast
 blastButton.addEventListener("click", () => {
   if (!gameRunning) return;
@@ -565,7 +551,7 @@ blastButton.addEventListener("click", () => {
   const randomX = Math.random() * 600;
   const randomY = Math.random() * 600;
   
-  applyForceBlast(randomX, randomY);
+  new ForceBlast(randomX, randomY, entities).apply();
   createBlastEffect(randomX, randomY);
   lastButtonBlastTime = currentTime;
   
@@ -579,6 +565,14 @@ window.addEventListener("resize", () => {
     draw(); // Redraw immediately on resize
   }
 });
+
+// Panel toggle handler
+panelToggle.addEventListener("click", () => {
+    controlPanel.classList.toggle("open");
+});
+
+canvas.addEventListener("click", handleForceBlast, { passive: false });
+canvas.addEventListener("touchstart", handleForceBlast, { passive: false });
 
 // Initialize UI but don't start game - wait for entity selection
 resizeCanvas(); // Initial canvas size

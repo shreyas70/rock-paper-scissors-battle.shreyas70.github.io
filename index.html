@@ -29,7 +29,7 @@
             </header>
 
             <main class="game-main">
-                <div class="canvas-container">
+                <div class="canvas-wrapper">
                     <h2 class="predict-winner-title" id="game-instruction">Pick Rock/Paper/Scissors</h2>
                     <div class="entity-selection" id="entity-selection">
                         <button class="entity-choice" data-entity="0">
@@ -45,100 +45,109 @@
                             <span class="choice-name">Scissors</span>
                         </button>
                     </div>
-                    <canvas id="canvas"></canvas>
+                    <div id="canvas-container">
+                        <canvas id="canvas"></canvas>
+                        <div id="joystick-container"></div>
+                    </div>
                 </div>
 
-                <aside class="control-panel">
-                    <div class="panel-section spawn-controls">
-                        <h3 class="section-title">Spawn Entities</h3>
+                <button id="panel-toggle" class="panel-toggle-btn">
+                    <span class="toggle-icon">⚙️</span>
+                </button>
 
-                        <div class="entity-control">
-                            <div class="entity-header">
-                                <span class="entity-icon">🪨</span>
-                                <span class="entity-name">Rock</span>
-                                <span class="entity-count" id="rock-count"
-                                    >50</span
-                                >
+                <aside class="control-panel" id="control-panel">
+                    <div class="panel-content">
+                        <div class="panel-section spawn-controls">
+                            <h3 class="section-title">Spawn Entities</h3>
+
+                            <div class="entity-control">
+                                <div class="entity-header">
+                                    <span class="entity-icon">🪨</span>
+                                    <span class="entity-name">Rock</span>
+                                    <span class="entity-count" id="rock-count"
+                                        >50</span
+                                    >
+                                </div>
+                                <input
+                                    id="rock"
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    value="50"
+                                    class="entity-slider"
+                                />
                             </div>
-                            <input
-                                id="rock"
-                                type="range"
-                                min="0"
-                                max="200"
-                                value="50"
-                                class="entity-slider"
-                            />
+
+                            <div class="entity-control">
+                                <div class="entity-header">
+                                    <span class="entity-icon">📄</span>
+                                    <span class="entity-name">Paper</span>
+                                    <span class="entity-count" id="paper-count"
+                                        >50</span
+                                    >
+                                </div>
+                                <input
+                                    id="paper"
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    value="50"
+                                    class="entity-slider"
+                                />
+                            </div>
+
+                            <div class="entity-control">
+                                <div class="entity-header">
+                                    <span class="entity-icon">✂️</span>
+                                    <span class="entity-name">Scissors</span>
+                                    <span class="entity-count" id="scissors-count"
+                                        >50</span
+                                    >
+                                </div>
+                                <input
+                                    id="scissors"
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    value="50"
+                                    class="entity-slider"
+                                />
+                            </div>
                         </div>
 
-                        <div class="entity-control">
-                            <div class="entity-header">
-                                <span class="entity-icon">📄</span>
-                                <span class="entity-name">Paper</span>
-                                <span class="entity-count" id="paper-count"
-                                    >50</span
-                                >
+                        <div class="panel-section game-settings">
+                            <h3 class="section-title">Game Settings</h3>
+
+                            <div class="setting-control">
+                                <div class="setting-header">
+                                    <span class="setting-icon">⚡</span>
+                                    <span class="setting-name">Speed</span>
+                                    <span class="setting-value" id="speed-value"
+                                        >1.0x</span
+                                    >
+                                </div>
+                                <input
+                                    id="speed"
+                                    type="range"
+                                    min="0.1"
+                                    max="10"
+                                    step="0.1"
+                                    value="1"
+                                    class="setting-slider"
+                                />
                             </div>
-                            <input
-                                id="paper"
-                                type="range"
-                                min="0"
-                                max="200"
-                                value="50"
-                                class="entity-slider"
-                            />
                         </div>
 
-                        <div class="entity-control">
-                            <div class="entity-header">
-                                <span class="entity-icon">✂️</span>
-                                <span class="entity-name">Scissors</span>
-                                <span class="entity-count" id="scissors-count"
-                                    >50</span
-                                >
-                            </div>
-                            <input
-                                id="scissors"
-                                type="range"
-                                min="0"
-                                max="200"
-                                value="50"
-                                class="entity-slider"
-                            />
+                        <div class="panel-section game-actions">
+                            <button id="blast-power" class="action-btn secondary">
+                                <span class="btn-icon">💥</span>
+                                Force Blast
+                            </button>
+                            <button id="restart" class="action-btn primary">
+                                <span class="btn-icon">🔄</span>
+                                Restart Battle
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="panel-section game-settings">
-                        <h3 class="section-title">Game Settings</h3>
-
-                        <div class="setting-control">
-                            <div class="setting-header">
-                                <span class="setting-icon">⚡</span>
-                                <span class="setting-name">Speed</span>
-                                <span class="setting-value" id="speed-value"
-                                    >1.0x</span
-                                >
-                            </div>
-                            <input
-                                id="speed"
-                                type="range"
-                                min="0.1"
-                                max="10"
-                                step="0.1"
-                                value="1"
-                                class="setting-slider"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="panel-section game-actions">
-                        <button id="blast-power" class="action-btn secondary">
-                            <span class="btn-icon">💥</span>
-                            Force Blast
-                        </button>
-                        <button id="restart" class="action-btn primary">
-                            <span class="btn-icon">🔄</span>
-                            Restart Battle
-                        </button>
                     </div>
                 </aside>
             </main>

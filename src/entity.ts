@@ -18,13 +18,15 @@ let nextId = 0;
 export const createEntity = (
   species: Species,
   x: number,
-  y: number
+  y: number,
+  vx: number = 0,
+  vy: number = 0
 ): Entity => ({
   id: nextId++,
   species,
   x,
   y,
-  vx: (Math.random() - 0.5) * 4,
-  vy: (Math.random() - 0.5) * 4,
+  vx,
+  vy,
   radius: 6,
 });
