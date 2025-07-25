@@ -1,6 +1,6 @@
 export default {
   extensionsToTreatAsEsm: ['.ts'],
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   testMatch: ['**/tests/**/*.test.ts'],
   transform: {
     '^.+\\.ts$': ['ts-jest', {

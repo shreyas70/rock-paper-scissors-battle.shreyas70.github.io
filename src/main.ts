@@ -2,6 +2,7 @@ import { createEntity, Species } from "./entity.js";
 import { step } from "./engine.js";
 import { Joystick } from "./joystick.js";
 import { PerformanceMonitor, getDynamicMaxEntities } from "./performance.js";
+import { ForceBlast } from "./force-blast.js";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -277,7 +278,7 @@ const loop = () => {
   if (joystick.deltaX !== 0 || joystick.deltaY !== 0) {
     const blastX = width / 2 + joystick.deltaX * (width / 2);
     const blastY = height / 2 + joystick.deltaY * (height / 2);
-    applyForceBlast(blastX, blastY);
+    new ForceBlast(blastX, blastY, entities).apply();
     createBlastEffect(blastX, blastY);
   }
 
@@ -482,44 +483,14 @@ const handleForceBlast = (e: MouseEvent | TouchEvent) => {
   console.log(`Converted to canvas: ${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}`);
   
   // Apply force blast
-  applyForceBlast(canvasX, canvasY);
+  new ForceBlast(canvasX, canvasY, entities).apply();
   createBlastEffect(canvasX, canvasY);
   lastCanvasBlastTime = currentTime;
   
   console.log(`Canvas force blast applied at: ${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}`);
 };
 
-const applyForceBlast = (blastX: number, blastY: number) => {
-  entities.forEach(entity => {
-    const dx = entity.x - blastX;
-    const dy = entity.y - blastY;
-    const distance = Math.hypot(dx, dy);
-    
-    if (distance < BLAST_RADIUS && distance > 0) {
-      // Force decreases with distance but remains powerful
-      const falloffFactor = Math.max(0.1, 1 - (distance / BLAST_RADIUS)); // 10% minimum force at edge
-      const forceMagnitude = BLAST_STRENGTH * falloffFactor;
-      
-      // Normalize direction and apply force
-      const forceX = (dx / distance) * forceMagnitude;
-      const forceY = (dy / distance) * forceMagnitude;
-      
-      // Apply force for movement
-      entity.vx += forceX * 0.01;
-      entity.vy += forceY * 0.01;
-      
-      // Cap velocity to prevent entities from flying off screen too fast
-      const maxVelocity = 15;
-      const currentSpeed = Math.hypot(entity.vx, entity.vy);
-      if (currentSpeed > maxVelocity) {
-        entity.vx = (entity.vx / currentSpeed) * maxVelocity;
-        entity.vy = (entity.vy / currentSpeed) * maxVelocity;
-      }
-    }
-  });
-};
-
-const createBlastEffect = (x: number, y: number) => {
+export const createBlastEffect = (x: number, y: number) => {
   blastEffects.push({
     x,
     y,
@@ -529,6 +500,8 @@ const createBlastEffect = (x: number, y: number) => {
     startTime: Date.now()
   });
 };
+
+export const getBlastEffects = () => blastEffects;
 
 const drawBlastEffects = () => {
   blastEffects.forEach((blast, index) => {
@@ -578,7 +551,7 @@ blastButton.addEventListener("click", () => {
   const randomX = Math.random() * 600;
   const randomY = Math.random() * 600;
   
-  applyForceBlast(randomX, randomY);
+  new ForceBlast(randomX, randomY, entities).apply();
   createBlastEffect(randomX, randomY);
   lastButtonBlastTime = currentTime;
   
