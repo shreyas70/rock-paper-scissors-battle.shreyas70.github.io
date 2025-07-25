@@ -571,6 +571,9 @@ panelToggle.addEventListener("click", () => {
     controlPanel.classList.toggle("open");
 });
 
+canvas.addEventListener("click", handleForceBlast, { passive: false });
+canvas.addEventListener("touchstart", handleForceBlast, { passive: false });
+
 // Initialize UI but don't start game - wait for entity selection
 resizeCanvas(); // Initial canvas size
 updateUI();
