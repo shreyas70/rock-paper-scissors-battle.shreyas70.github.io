@@ -137,15 +137,22 @@ body {
     gap: var(--spacing-xl);
     padding: var(--spacing-xl);
     align-items: flex-start;
+    position: relative;
 }
 
-.canvas-container {
+.canvas-wrapper {
     flex: 1;
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-md);
+}
+
+#canvas-container {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    max-width: 100%;
 }
 
 .predict-winner-title {
@@ -226,6 +233,17 @@ canvas {
     object-fit: contain;
 }
 
+/* Joystick container */
+#joystick-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 100px;
+    height: 100px;
+    display: none; /* Hidden by default, shown on mobile */
+    z-index: 200;
+}
+
 /* Control panel */
 .control-panel {
     width: 320px;
@@ -245,6 +263,10 @@ canvas {
 
 .panel-section:last-child {
     margin-bottom: 0;
+}
+
+.panel-toggle-btn {
+    display: none; /* Hidden by default */
 }
 
 .section-title {
@@ -566,11 +588,13 @@ canvas {
         max-width: 600px;
         position: static;
     }
-
-    /* Canvas responsive scaling handled by base canvas styles */
 }
 
 @media (max-width: 768px) {
+    .game-main {
+        padding-bottom: 80px; /* Space for collapsed panel */
+    }
+
     .game-header {
         flex-direction: column;
         gap: var(--spacing-md);
@@ -590,7 +614,78 @@ canvas {
         padding: var(--spacing-md);
     }
 
-    /* Canvas responsive scaling handled by base canvas styles */
+    #canvas-container {
+        width: 100%;
+        padding-top: 100%; /* 1:1 Aspect Ratio */
+        height: 0;
+    }
+
+    #canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #joystick-container {
+        display: block; /* Show joystick on mobile */
+    }
+
+    .control-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: none;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding: var(--spacing-md);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 200;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .control-panel.open {
+        transform: translateY(0);
+    }
+
+    .panel-content {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        gap: var(--spacing-md);
+    }
+
+    .panel-section {
+        flex-basis: 100%;
+    }
+
+    @media (min-width: 480px) {
+        .panel-section.spawn-controls { flex-basis: 100%; }
+        .panel-section.game-settings { flex-basis: calc(50% - 8px); }
+        .panel-section.game-actions { flex-basis: calc(50% - 8px); }
+    }
+
+    .panel-toggle-btn {
+        display: flex;
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        width: 50px;
+        height: 50px;
+        background: var(--accent-primary);
+        border: none;
+        border-radius: 50%;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        color: white;
+        z-index: 210;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
 
     .predict-winner-title {
         font-size: 1.2rem;
